@@ -863,23 +863,38 @@ function render() {
 let lastTapTime = 0;
 let lastTapCardId = null;
 
-document.getElementById('stock').addEventListener('click', function(e) {
-  e.stopPropagation();
-  drawCard();
-});
+// Single handler on game area — handles stock, waste, tableau, and foundations
+document.querySelector('.game-area').addEventListener('click', function(e) {
+  // === STOCK ===
+  if (e.target.closest('#stock')) {
+    drawCard();
+    return;
+  }
 
-document.getElementById('waste').addEventListener('click', function(e) {
   const cardEl = e.target.closest('[data-action="select"]');
+  const colEl = e.target.closest('[data-action="column"]');
+  const foundEl = e.target.closest('[data-action="foundation"]');
 
+  // === CARD CLICKED (any source) ===
   if (cardEl) {
     const source = cardEl.getAttribute('data-source');
     const col = parseInt(cardEl.getAttribute('data-col'));
     const cardIdx = parseInt(cardEl.getAttribute('data-card'));
     const dataId = cardEl.getAttribute('data-id');
 
-    // If we have a selection, try to PLACE on waste (only if waste is destination, which it's not — just deselect)
+    // Already have something selected — try to PLACE
     if (selectedCards) {
-      selectedCards = null;
+      if (source === 'tableau' || source === 'waste') {
+        // Place on tableau column (waste cards go to tableau via the column click path)
+        const targetCol = (source === 'tableau') ? col : null;
+        if (targetCol !== null) {
+          tryMoveToTableau(targetCol);
+        } else {
+          selectedCards = null;
+        }
+      } else if (source === 'foundation') {
+        tryMoveToFoundation();
+      }
       render();
       return;
     }
@@ -892,111 +907,51 @@ document.getElementById('waste').addEventListener('click', function(e) {
     }
     lastTapTime = Date.now();
     lastTapCardId = dataId;
-
     selectCard(source, col, cardIdx);
-    e.stopPropagation();
     return;
   }
 
-  // Clicking empty area of waste — deselect
-  if (selectedCards) {
-    selectedCards = null;
-    render();
-  }
-});
-
-document.getElementById('tableau').addEventListener('click', function(e) {
-  const cardEl = e.target.closest('[data-action="select"]');
-  const colEl = e.target.closest('[data-action="column"]');
-  const foundEl = e.target.closest('[data-action="foundation"]');
-
-  if (cardEl) {
-    // Card was clicked
-    const dataId = cardEl.getAttribute('data-id');
-    const source = cardEl.getAttribute('data-source');
-    const col = parseInt(cardEl.getAttribute('data-col'));
-    const cardIdx = parseInt(cardEl.getAttribute('data-card'));
-
-    // If we have a selection, try to PLACE on this column instead of selecting
+  // === FOUNDATION CLICKED (empty pile) ===
+  if (foundEl) {
+    const foundIdx = parseInt(foundEl.getAttribute('data-fidx'));
     if (selectedCards) {
-      if (source === 'tableau') {
-        tryMoveToTableau(col);
-      } else if (source === 'foundation') {
+      const card = selectedCards.cards[0];
+      if (selectedCards.cards.length === 1 && canPlaceOnFoundation(card)
+          && getFoundationIndex(card.suit) === foundIdx) {
         tryMoveToFoundation();
+      } else {
+        selectedCards = null;
       }
       render();
       return;
     }
-
-    // Double-tap detection for auto-move to foundation
-    if (dataId === lastTapCardId && Date.now() - lastTapTime < 500) {
-      lastTapTime = 0; lastTapCardId = null;
-      attemptAutoMoveToFoundation(dataId);
-      return;
+    // Select foundation card if one exists
+    if (foundations[foundIdx].length > 0) {
+      selectCard('foundation', foundIdx);
     }
-    lastTapTime = Date.now();
-    lastTapCardId = dataId;
-
-    selectCard(source, col, cardIdx);
-    e.stopPropagation();
     return;
   }
 
+  // === TABLEAU COLUMN CLICKED (empty space between cards) ===
   if (colEl) {
     const colIdx = parseInt(colEl.getAttribute('data-cidx'));
-
     if (selectedCards) {
-      // Try to place selected cards here
       tryMoveToTableau(colIdx);
       render();
       return;
     }
-
     const col = tableau[colIdx];
-    if (col.length === 0) {
-      // Empty column - deselect if we somehow got here
-      selectedCards = null;
-      render();
-      return;
-    }
-
-    // Flip face-down top card
+    if (col.length === 0) { selectedCards = null; render(); return; }
     const topCard = getBottomCard(col);
     if (topCard && !topCard.faceUp) {
-      topCard.faceUp = true;
-      updateScore(5);
-      selectedCards = null;
-      render();
-      return;
+      topCard.faceUp = true; updateScore(5); selectedCards = null; render(); return;
     }
-
-    // Select top card
     selectCard('tableau', colIdx);
-  }
-});
-
-document.getElementById('foundations').addEventListener('click', function(e) {
-  const foundEl = e.target.closest('[data-action="foundation"]');
-  if (!foundEl) return;
-
-  const foundIdx = parseInt(foundEl.getAttribute('data-fidx'));
-
-  if (selectedCards) {
-    const card = selectedCards.cards[0];
-    if (selectedCards.cards.length === 1 && canPlaceOnFoundation(card)
-        && getFoundationIndex(card.suit) === foundIdx) {
-      tryMoveToFoundation();
-    } else {
-      selectedCards = null;
-    }
-    render();
     return;
   }
 
-  // Select foundation card
-  if (foundations[foundIdx].length > 0) {
-    selectCard('foundation', foundIdx);
-  }
+  // === CLICKED EMPTY SPACE ===
+  if (selectedCards) { selectedCards = null; render(); }
 });
 
 // Clean up old inline onclick-based functions (no longer needed)
