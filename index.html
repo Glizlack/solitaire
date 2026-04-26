@@ -869,9 +869,37 @@ document.getElementById('stock').addEventListener('click', function(e) {
 });
 
 document.getElementById('waste').addEventListener('click', function(e) {
-  // Clicking the empty area of waste pile (not a card) - deselect
-  const card = e.target.closest('[data-action="select"]');
-  if (!card && selectedCards) {
+  const cardEl = e.target.closest('[data-action="select"]');
+
+  if (cardEl) {
+    const source = cardEl.getAttribute('data-source');
+    const col = parseInt(cardEl.getAttribute('data-col'));
+    const cardIdx = parseInt(cardEl.getAttribute('data-card'));
+    const dataId = cardEl.getAttribute('data-id');
+
+    // If we have a selection, try to PLACE on waste (only if waste is destination, which it's not — just deselect)
+    if (selectedCards) {
+      selectedCards = null;
+      render();
+      return;
+    }
+
+    // Double-tap for auto-move to foundation
+    if (dataId === lastTapCardId && Date.now() - lastTapTime < 500) {
+      lastTapTime = 0; lastTapCardId = null;
+      attemptAutoMoveToFoundation(dataId);
+      return;
+    }
+    lastTapTime = Date.now();
+    lastTapCardId = dataId;
+
+    selectCard(source, col, cardIdx);
+    e.stopPropagation();
+    return;
+  }
+
+  // Clicking empty area of waste — deselect
+  if (selectedCards) {
     selectedCards = null;
     render();
   }
