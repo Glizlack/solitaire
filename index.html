@@ -378,7 +378,7 @@ body {
   <div class="top-row">
     <div class="stock-waste">
       <div class="stock-pile" id="stock" onclick="drawCard()">
-        <span class="empty-label" id="stockLabel">🎴</span>
+        <span class="empty-label">🎴</span>
       </div>
       <div class="waste-pile" id="waste">
         <span class="empty-label waste-label">♢</span>
@@ -771,48 +771,39 @@ function cardHTML(card, cssClass = '') {
 }
 
 function render() {
-  // Stock
-  const stockEl = document.getElementById('stock');
-  const stockLabel = document.getElementById('stockLabel');
+  // Build all HTML as strings to avoid DOM-element-reference bugs with innerHTML
+
+  // === Stock ===
+  let stockHTML = '';
   if (stock.length > 0) {
-    stockLabel.style.display = 'none';
-    stockEl.innerHTML = '<div class="card face-down" style="position:absolute;top:0;left:0;"></div>';
+    stockHTML = '<div class="card face-down" style="position:absolute;top:0;left:0;"></div>';
     if (stock.length > 1) {
-      stockEl.innerHTML += '<div class="card face-down" style="position:absolute;top:2px;left:2px;opacity:0.6;"></div>';
+      stockHTML += '<div class="card face-down" style="position:absolute;top:2px;left:2px;opacity:0.6;"></div>';
     }
   } else {
-    stockLabel.style.display = 'block';
-    stockEl.innerHTML = '';
-    stockEl.appendChild(stockLabel);
+    stockHTML = '<span class="empty-label">🎴</span>';
   }
+  document.getElementById('stock').innerHTML = stockHTML;
 
-  // Waste
-  const wasteEl = document.getElementById('waste');
-  wasteEl.innerHTML = '';
+  // === Waste ===
+  let wasteHTML = '';
   if (waste.length === 0) {
-    wasteEl.innerHTML = '<span class="empty-label">♢</span>';
+    wasteHTML = '<span class="empty-label">♢</span>';
   } else {
-    // Show top 3 cards spread out
     const showCount = Math.min(3, waste.length);
     for (let i = waste.length - showCount; i < waste.length; i++) {
       const card = waste[i];
       const isSelected = selectedCards && selectedCards.source === 'waste' && i === waste.length - 1;
       const leftOff = (i - (waste.length - showCount)) * 28;
-      wasteEl.innerHTML += cardHTML(card, isSelected ? 'selected' : '')
-        .replace('class="card', `class="card" style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"`);
-    }
-    // Click handler on top card
-    if (waste.length > 0) {
-      const topCardEl = wasteEl.querySelector('.card:last-child');
-      if (topCardEl && !topCardEl.onclick) {
-        topCardEl.setAttribute('onclick', `event.stopPropagation(); selectCard('waste', 0, ${waste.length - 1})`);
-      }
+      const clickAttr = (i === waste.length - 1) ? ` onclick="event.stopPropagation();selectCard('waste',0,${i})"` : '';
+      wasteHTML += cardHTML(card, isSelected ? 'selected' : '')
+        .replace('class="card', `class="card" style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"${clickAttr}`);
     }
   }
+  document.getElementById('waste').innerHTML = wasteHTML;
 
-  // Foundations
-  const foundGroup = document.getElementById('foundations');
-  foundGroup.innerHTML = '';
+  // === Foundations ===
+  let foundHTML = '';
   for (let i = 0; i < 4; i++) {
     const pile = foundations[i];
     const isSelected = selectedCards && selectedCards.source === 'foundation' && selectedCards.colIndex === i;
@@ -823,46 +814,41 @@ function render() {
       inner = cardHTML(pile[pile.length - 1], isSelected ? 'selected' : '')
         .replace('class="card', 'class="card" style="position:absolute;top:0;left:0;"');
     }
-    foundGroup.innerHTML += `<div class="foundation-pile" onclick="handleFoundationClick(${i})" id="found-${i}">${inner}</div>`;
+    foundHTML += `<div class="foundation-pile" onclick="handleFoundationClick(${i})" id="found-${i}">${inner}</div>`;
   }
+  document.getElementById('foundations').innerHTML = foundHTML;
 
-  // Tableau
-  const tableauEl = document.getElementById('tableau');
-  tableauEl.innerHTML = '';
+  // === Tableau ===
+  let tabHTML = '';
   for (let colIdx = 0; colIdx < 7; colIdx++) {
     const col = tableau[colIdx];
     let colHTML = '';
+    // Count face-up cards first (from bottom)
+    const faceUpCards = [];
+    for (let ci = 0; ci < col.length; ci++) {
+      if (col[ci].faceUp) faceUpCards.push({ idx: ci, card: col[ci] });
+    }
     for (let cardIdx = 0; cardIdx < col.length; cardIdx++) {
       const card = col[cardIdx];
       let cssClass = '';
       if (selectedCards && selectedCards.source === 'tableau' && selectedCards.colIndex === colIdx) {
-        // Highlight selected run
-        if (cardIdx >= selectedCards.cardIndex && card.faceUp) {
-          cssClass = 'selected';
-        }
+        if (cardIdx >= selectedCards.cardIndex && card.faceUp) cssClass = 'selected';
       }
-      colHTML += cardHTML(card, cssClass);
+      // Add inline onclick for face-up cards ONLY
+      let extraAttr = '';
+      if (card.faceUp) {
+        extraAttr = ` onclick="event.stopPropagation();selectCard('tableau',${colIdx},${cardIdx})"`;
+      }
+      colHTML += cardHTML(card, cssClass)
+        .replace(/class="card/, `class="card"${extraAttr}`);
     }
-    // If column is empty and we have a selection, highlight as target
     let targetClass = '';
     if (col.length === 0 && selectedCards && canPlaceOnTableau(selectedCards.cards[0], null)) {
       targetClass = 'movable-target';
     }
-    tableauEl.innerHTML += `<div class="tableau-column ${targetClass}" id="col-${colIdx}" onclick="handleTableauClick(${colIdx})">${colHTML}</div>`;
+    tabHTML += `<div class="tableau-column ${targetClass}" id="col-${colIdx}" onclick="handleTableauClick(${colIdx})">${colHTML}</div>`;
   }
-
-  // Attach click handlers to face-up cards in tableau
-  for (let colIdx = 0; colIdx < 7; colIdx++) {
-    const col = tableau[colIdx];
-    const colEl = document.getElementById(`col-${colIdx}`);
-    if (!colEl) continue;
-    const cardEls = colEl.querySelectorAll('.card.face-up');
-    cardEls.forEach((el, idx) => {
-      // Map to actual card index (face-up cards from bottom)
-      const actualIdx = col.length - cardEls.length + idx;
-      el.setAttribute('onclick', `event.stopPropagation(); selectCard('tableau', ${colIdx}, ${actualIdx})`);
-    });
-  }
+  document.getElementById('tableau').innerHTML = tabHTML;
 
   updateButtonStates();
 }
