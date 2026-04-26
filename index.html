@@ -889,6 +889,17 @@ document.getElementById('tableau').addEventListener('click', function(e) {
     const col = parseInt(cardEl.getAttribute('data-col'));
     const cardIdx = parseInt(cardEl.getAttribute('data-card'));
 
+    // If we have a selection, try to PLACE on this column instead of selecting
+    if (selectedCards) {
+      if (source === 'tableau') {
+        tryMoveToTableau(col);
+      } else if (source === 'foundation') {
+        tryMoveToFoundation();
+      }
+      render();
+      return;
+    }
+
     // Double-tap detection for auto-move to foundation
     if (dataId === lastTapCardId && Date.now() - lastTapTime < 500) {
       lastTapTime = 0; lastTapCardId = null;
