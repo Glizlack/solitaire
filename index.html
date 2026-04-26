@@ -751,18 +751,18 @@ function checkWin() {
 }
 
 // ===================== RENDER =====================
-function cardHTML(card, cssClass = '') {
+function cardHTML(card, cssClass = '', onClick = '') {
   if (!card) return '';
   const color = SUIT_COLORS[card.suit];
   const symbol = SUIT_SYMBOLS[card.suit];
   const rank = RANK_NAMES[card.rank];
-  const faceClass = card.faceUp ? 'face-up' : 'face-down';
+  const clickAttr = onClick ? ` onclick="${onClick}"` : '';
 
   if (!card.faceUp) {
-    return `<div class="card face-down ${cssClass}" data-id="${card.id}"></div>`;
+    return `<div class="card face-down ${cssClass}" data-id="${card.id}"${clickAttr}></div>`;
   }
 
-  return `<div class="card face-up ${color} ${cssClass}" data-id="${card.id}">
+  return `<div class="card face-up ${color} ${cssClass}" data-id="${card.id}"${clickAttr}>
     <span class="card-rank ${color}">${rank}</span>
     <span class="card-suit-small ${color}">${symbol}</span>
     <span class="card-suit-center ${color}">${symbol}</span>
@@ -795,9 +795,9 @@ function render() {
       const card = waste[i];
       const isSelected = selectedCards && selectedCards.source === 'waste' && i === waste.length - 1;
       const leftOff = (i - (waste.length - showCount)) * 28;
-      const clickAttr = (i === waste.length - 1) ? ` onclick="event.stopPropagation();selectCard('waste',0,${i})"` : '';
-      wasteHTML += cardHTML(card, isSelected ? 'selected' : '')
-        .replace('class="card', `class="card" style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"${clickAttr}`);
+      const clickAttr = (i === waste.length - 1) ? `event.stopPropagation();selectCard('waste',0,${i})` : '';
+      wasteHTML += cardHTML(card, isSelected ? 'selected' : '', clickAttr)
+        .replace('class="card', `class="card" style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"`);
     }
   }
   document.getElementById('waste').innerHTML = wasteHTML;
@@ -835,12 +835,11 @@ function render() {
         if (cardIdx >= selectedCards.cardIndex && card.faceUp) cssClass = 'selected';
       }
       // Add inline onclick for face-up cards ONLY
-      let extraAttr = '';
+      let onClick = '';
       if (card.faceUp) {
-        extraAttr = ` onclick="event.stopPropagation();selectCard('tableau',${colIdx},${cardIdx})"`;
+        onClick = `event.stopPropagation();selectCard('tableau',${colIdx},${cardIdx})`;
       }
-      colHTML += cardHTML(card, cssClass)
-        .replace(/class="card/, `class="card"${extraAttr}`);
+      colHTML += cardHTML(card, cssClass, onClick);
     }
     let targetClass = '';
     if (col.length === 0 && selectedCards && canPlaceOnTableau(selectedCards.cards[0], null)) {
