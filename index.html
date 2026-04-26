@@ -377,7 +377,7 @@ body {
 <div class="game-area">
   <div class="top-row">
     <div class="stock-waste">
-      <div class="stock-pile" id="stock" onclick="drawCard()">
+      <div class="stock-pile" id="stock">
         <span class="empty-label">🎴</span>
       </div>
       <div class="waste-pile" id="waste">
@@ -750,28 +750,16 @@ function checkWin() {
   }
 }
 
-// ===================== RENDER =====================
-function cardHTML(card, cssClass = '', onClick = '') {
-  if (!card) return '';
-  const color = SUIT_COLORS[card.suit];
-  const symbol = SUIT_SYMBOLS[card.suit];
-  const rank = RANK_NAMES[card.rank];
-  const clickAttr = onClick ? ` onclick="${onClick}"` : '';
-
-  if (!card.faceUp) {
-    return `<div class="card face-down ${cssClass}" data-id="${card.id}"${clickAttr}></div>`;
-  }
-
-  return `<div class="card face-up ${color} ${cssClass}" data-id="${card.id}"${clickAttr}>
-    <span class="card-rank ${color}">${rank}</span>
-    <span class="card-suit-small ${color}">${symbol}</span>
-    <span class="card-suit-center ${color}">${symbol}</span>
-    <span class="card-corner-bottom ${color}">${rank}</span>
-  </div>`;
+function updateButtonStates() {
+  document.getElementById('btnUndo').style.opacity = moveHistory.length > 0 ? '1' : '0.4';
+  document.getElementById('btnAuto').style.opacity = '1';
 }
 
+// ===================== RENDER =====================
+function cardHTML_deprecated() { /* unused, keeping for reference */ }
+
 function render() {
-  // Build all HTML as strings to avoid DOM-element-reference bugs with innerHTML
+  // Build all HTML as strings with data attributes for event delegation
 
   // === Stock ===
   let stockHTML = '';
@@ -795,9 +783,16 @@ function render() {
       const card = waste[i];
       const isSelected = selectedCards && selectedCards.source === 'waste' && i === waste.length - 1;
       const leftOff = (i - (waste.length - showCount)) * 28;
-      const clickAttr = (i === waste.length - 1) ? `event.stopPropagation();selectCard('waste',0,${i})` : '';
-      wasteHTML += cardHTML(card, isSelected ? 'selected' : '', clickAttr)
-        .replace('class="card', `class="card" style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"`);
+      const selClass = isSelected ? ' selected' : '';
+      wasteHTML += `<div class="card face-up ${SUIT_COLORS[card.suit]}${selClass}"
+        style="position:absolute;top:0;left:${leftOff}px;z-index:${i}"
+        data-action="select" data-source="waste" data-col="0" data-card="${i}"
+        data-id="${card.id}">
+        <span class="card-rank ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+        <span class="card-suit-small ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+        <span class="card-suit-center ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+        <span class="card-corner-bottom ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+      </div>`;
     }
   }
   document.getElementById('waste').innerHTML = wasteHTML;
@@ -811,10 +806,19 @@ function render() {
     if (pile.length === 0) {
       inner = `<span class="empty-label">${SUIT_SYMBOLS[SUITS[i]]}</span>`;
     } else {
-      inner = cardHTML(pile[pile.length - 1], isSelected ? 'selected' : '')
-        .replace('class="card', 'class="card" style="position:absolute;top:0;left:0;"');
+      const card = pile[pile.length - 1];
+      const selClass = isSelected ? ' selected' : '';
+      inner = `<div class="card face-up ${SUIT_COLORS[card.suit]}${selClass}"
+        style="position:absolute;top:0;left:0;"
+        data-action="select" data-source="foundation" data-col="${i}" data-card="0"
+        data-id="${card.id}">
+        <span class="card-rank ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+        <span class="card-suit-small ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+        <span class="card-suit-center ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+        <span class="card-corner-bottom ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+      </div>`;
     }
-    foundHTML += `<div class="foundation-pile" onclick="handleFoundationClick(${i})" id="found-${i}">${inner}</div>`;
+    foundHTML += `<div class="foundation-pile" data-action="foundation" data-fidx="${i}" id="found-${i}">${inner}</div>`;
   }
   document.getElementById('foundations').innerHTML = foundHTML;
 
@@ -823,89 +827,125 @@ function render() {
   for (let colIdx = 0; colIdx < 7; colIdx++) {
     const col = tableau[colIdx];
     let colHTML = '';
-    // Count face-up cards first (from bottom)
-    const faceUpCards = [];
-    for (let ci = 0; ci < col.length; ci++) {
-      if (col[ci].faceUp) faceUpCards.push({ idx: ci, card: col[ci] });
-    }
     for (let cardIdx = 0; cardIdx < col.length; cardIdx++) {
       const card = col[cardIdx];
-      let cssClass = '';
-      if (selectedCards && selectedCards.source === 'tableau' && selectedCards.colIndex === colIdx) {
-        if (cardIdx >= selectedCards.cardIndex && card.faceUp) cssClass = 'selected';
+      let cssClass = card.faceUp ? ` face-up ${SUIT_COLORS[card.suit]}` : ' face-down';
+      if (selectedCards && selectedCards.source === 'tableau' && selectedCards.colIndex === colIdx
+          && cardIdx >= selectedCards.cardIndex && card.faceUp) {
+        cssClass += ' selected';
       }
-      // Add inline onclick for face-up cards ONLY
-      let onClick = '';
+      let dataAttrs = card.faceUp
+        ? ` data-action="select" data-source="tableau" data-col="${colIdx}" data-card="${cardIdx}"`
+        : '';
       if (card.faceUp) {
-        onClick = `event.stopPropagation();selectCard('tableau',${colIdx},${cardIdx})`;
+        colHTML += `<div class="card${cssClass}" data-id="${card.id}"${dataAttrs}>
+          <span class="card-rank ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+          <span class="card-suit-small ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+          <span class="card-suit-center ${SUIT_COLORS[card.suit]}">${SUIT_SYMBOLS[card.suit]}</span>
+          <span class="card-corner-bottom ${SUIT_COLORS[card.suit]}">${RANK_NAMES[card.rank]}</span>
+        </div>`;
+      } else {
+        colHTML += `<div class="card${cssClass}" data-id="${card.id}"></div>`;
       }
-      colHTML += cardHTML(card, cssClass, onClick);
     }
     let targetClass = '';
     if (col.length === 0 && selectedCards && canPlaceOnTableau(selectedCards.cards[0], null)) {
       targetClass = 'movable-target';
     }
-    tabHTML += `<div class="tableau-column ${targetClass}" id="col-${colIdx}" onclick="handleTableauClick(${colIdx})">${colHTML}</div>`;
+    tabHTML += `<div class="tableau-column ${targetClass}" data-action="column" data-cidx="${colIdx}" id="col-${colIdx}">${colHTML}</div>`;
   }
   document.getElementById('tableau').innerHTML = tabHTML;
 
   updateButtonStates();
 }
 
-function updateButtonStates() {
-  document.getElementById('btnUndo').style.opacity = moveHistory.length > 0 ? '1' : '0.4';
-  document.getElementById('btnAuto').style.opacity = '1';
-}
+// ===================== UNIFIED CLICK DELEGATION =====================
+let lastTapTime = 0;
+let lastTapCardId = null;
 
-function handleTableauClick(colIdx) {
-  if (selectedCards) {
-    // Try to place selected cards here
-    if (tryMoveToTableau(colIdx)) {
+document.getElementById('stock').addEventListener('click', function(e) {
+  e.stopPropagation();
+  drawCard();
+});
+
+document.getElementById('waste').addEventListener('click', function(e) {
+  // Clicking the empty area of waste pile (not a card) - deselect
+  const card = e.target.closest('[data-action="select"]');
+  if (!card && selectedCards) {
+    selectedCards = null;
+    render();
+  }
+});
+
+document.getElementById('tableau').addEventListener('click', function(e) {
+  const cardEl = e.target.closest('[data-action="select"]');
+  const colEl = e.target.closest('[data-action="column"]');
+  const foundEl = e.target.closest('[data-action="foundation"]');
+
+  if (cardEl) {
+    // Card was clicked
+    const dataId = cardEl.getAttribute('data-id');
+    const source = cardEl.getAttribute('data-source');
+    const col = parseInt(cardEl.getAttribute('data-col'));
+    const cardIdx = parseInt(cardEl.getAttribute('data-card'));
+
+    // Double-tap detection for auto-move to foundation
+    if (dataId === lastTapCardId && Date.now() - lastTapTime < 500) {
+      lastTapTime = 0; lastTapCardId = null;
+      attemptAutoMoveToFoundation(dataId);
+      return;
+    }
+    lastTapTime = Date.now();
+    lastTapCardId = dataId;
+
+    selectCard(source, col, cardIdx);
+    e.stopPropagation();
+    return;
+  }
+
+  if (colEl) {
+    const colIdx = parseInt(colEl.getAttribute('data-cidx'));
+
+    if (selectedCards) {
+      // Try to place selected cards here
+      tryMoveToTableau(colIdx);
       render();
       return;
     }
-  }
 
-  // If column is empty or only face-down, deselect
-  const col = tableau[colIdx];
-  if (col.length === 0) {
-    // Empty column — only King can go here
-    if (selectedCards && selectedCards.cards[0].rank === 13) {
-      tryMoveToTableau(colIdx);
-      render();
-    } else {
+    const col = tableau[colIdx];
+    if (col.length === 0) {
+      // Empty column - deselect if we somehow got here
       selectedCards = null;
       render();
+      return;
     }
-    return;
-  }
 
-  // If last card is face-down, flip it
-  const topCard = getBottomCard(col);
-  if (topCard && !topCard.faceUp) {
-    selectedCards = null;
-    topCard.faceUp = true;
-    updateScore(5);
-    render();
-    return;
-  }
+    // Flip face-down top card
+    const topCard = getBottomCard(col);
+    if (topCard && !topCard.faceUp) {
+      topCard.faceUp = true;
+      updateScore(5);
+      selectedCards = null;
+      render();
+      return;
+    }
 
-  // Otherwise select the top face-up card
-  if (!selectedCards) {
+    // Select top card
     selectCard('tableau', colIdx);
-    return;
   }
+});
 
-  // Try to place
-  tryMoveToTableau(colIdx);
-  render();
-}
+document.getElementById('foundations').addEventListener('click', function(e) {
+  const foundEl = e.target.closest('[data-action="foundation"]');
+  if (!foundEl) return;
 
-function handleFoundationClick(foundIdx) {
+  const foundIdx = parseInt(foundEl.getAttribute('data-fidx'));
+
   if (selectedCards) {
-    // Check if we can place on this foundation
     const card = selectedCards.cards[0];
-    if (selectedCards.cards.length === 1 && canPlaceOnFoundation(card) && getFoundationIndex(card.suit) === foundIdx) {
+    if (selectedCards.cards.length === 1 && canPlaceOnFoundation(card)
+        && getFoundationIndex(card.suit) === foundIdx) {
       tryMoveToFoundation();
     } else {
       selectedCards = null;
@@ -914,36 +954,42 @@ function handleFoundationClick(foundIdx) {
     return;
   }
 
-  // Select foundation card to move back to tableau
+  // Select foundation card
   if (foundations[foundIdx].length > 0) {
     selectCard('foundation', foundIdx);
   }
-}
-
-// Double-tap on a card tries to auto-move to foundation
-let lastTap = 0;
-document.addEventListener('click', function(e) {
-  const card = e.target.closest('.card.face-up');
-  if (!card) return;
-  const now = Date.now();
-  if (now - lastTap < 400) {
-    // Double tap! Try to move this to foundation
-    const dataId = card.getAttribute('data-id');
-    if (dataId) {
-      // Find the card
-      attemptAutoMoveToFoundation(dataId);
-    }
-  }
-  lastTap = now;
 });
 
+// Clean up old inline onclick-based functions (no longer needed)
+function handleTableauClick(colIdx) {
+  // Fallback kept for compatibility, should not be called
+  const col = tableau[colIdx];
+  if (selectedCards) { tryMoveToTableau(colIdx); render(); return; }
+  if (col.length === 0) { selectedCards = null; render(); return; }
+  const tc = getBottomCard(col);
+  if (tc && !tc.faceUp) { tc.faceUp = true; updateScore(5); selectedCards = null; render(); return; }
+  selectCard('tableau', colIdx);
+}
+
+function handleFoundationClick(foundIdx) {
+  // Fallback kept for compatibility, should not be called
+  if (selectedCards) {
+    const card = selectedCards.cards[0];
+    if (selectedCards.cards.length === 1 && canPlaceOnFoundation(card)
+        && getFoundationIndex(card.suit) === foundIdx) {
+      tryMoveToFoundation();
+    } else { selectedCards = null; }
+    render();
+    return;
+  }
+  if (foundations[foundIdx].length > 0) selectCard('foundation', foundIdx);
+}
+
 function attemptAutoMoveToFoundation(cardId) {
-  // Check waste
   if (waste.length > 0 && waste[waste.length - 1].id === cardId) {
     selectedCards = { source: 'waste', colIndex: 0, cardIndex: 0, cards: [waste[waste.length - 1]] };
     if (tryMoveToFoundation()) { render(); return; }
   }
-  // Check tableau
   for (let i = 0; i < 7; i++) {
     const col = tableau[i];
     if (col.length > 0 && getBottomCard(col).id === cardId) {
@@ -951,7 +997,6 @@ function attemptAutoMoveToFoundation(cardId) {
       if (tryMoveToFoundation()) { render(); return; }
     }
   }
-  // Check foundations
   for (let i = 0; i < 4; i++) {
     if (foundations[i].length > 0 && foundations[i][foundations[i].length - 1].id === cardId) {
       selectedCards = { source: 'foundation', colIndex: i, cardIndex: 0, cards: [foundations[i][foundations[i].length - 1]] };
