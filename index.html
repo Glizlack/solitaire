@@ -12,7 +12,8 @@ body {
   background-image: radial-gradient(ellipse at center, #1e6b32 0%, #0d3d1a 100%);
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -326,6 +327,11 @@ body {
   .empty-label { font-size: 2rem; }
   .btn-row { gap: 6px; padding: 0 4px 8px; }
   .btn { font-size: 0.95rem; padding: 12px 10px; border-radius: 10px; }
+  .tableau { gap: 6px; }
+  .top-row { gap: 6px; margin-bottom: 12px; }
+  .stock-waste { gap: 8px; margin-right: 12px; }
+  .foundation-group { gap: 8px; }
+  .game-area { padding: 0 4px 20px; }
   .tableau-column .card:nth-child(2) { top: 22px; }
   .tableau-column .card:nth-child(3) { top: 44px; }
   .tableau-column .card:nth-child(4) { top: 66px; }
@@ -358,6 +364,23 @@ body {
   pointer-events: none;
 }
 .toast.show { opacity: 1; }
+
+/* Scroll hint */
+.scroll-hint {
+  position: fixed;
+  bottom: 16px;
+  right: 12px;
+  color: rgba(255,255,255,0.5);
+  font-size: 1.6rem;
+  animation: hintPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 800;
+}
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+.scroll-hint.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -399,6 +422,8 @@ body {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="scroll-hint" id="scrollHint">◀ swipe ▶</div>
 
 <script>
 // ===================== GAME STATE =====================
@@ -1096,6 +1121,25 @@ document.addEventListener('keydown', function(e) {
     case 'Escape': selectedCards = null; render(); break;
   }
 });
+
+// ===================== SCROLL HINT =====================
+(function() {
+  const hint = document.getElementById('scrollHint');
+  if (!hint) return;
+  let hidden = false;
+  function hide() {
+    if (hidden) return;
+    hidden = true;
+    hint.classList.add('hidden');
+  }
+  // Hide after user scrolls or touches the tableau
+  document.addEventListener('scroll', hide, { once: true, passive: true });
+  // Also hide after any game-area click
+  const ga = document.querySelector('.game-area');
+  if (ga) ga.addEventListener('click', hide, { once: true });
+  // Hide after 8 seconds if never triggered
+  setTimeout(hide, 8000);
+})();
 
 // ===================== START =====================
 newGame();
