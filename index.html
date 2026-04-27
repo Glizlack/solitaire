@@ -12,8 +12,7 @@ body {
   background-image: radial-gradient(ellipse at center, #1e6b32 0%, #0d3d1a 100%);
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -130,8 +129,11 @@ body {
 .tableau {
   display: flex;
   gap: 8px;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
 }
 
 .tableau-column {
@@ -324,13 +326,14 @@ body {
   .card-suit-small { font-size: 1rem; top: 26px; left: 7px; }
   .card-corner-bottom { font-size: 1.3rem; bottom: 4px; right: 6px; }
   .stock-pile, .waste-pile, .foundation-pile, .tableau-column { width: 85px; height: 120px; }
+  .stock-pile, .waste-pile, .foundation-pile { width: 72px; height: 100px; }
   .empty-label { font-size: 2rem; }
   .btn-row { gap: 6px; padding: 0 4px 8px; }
   .btn { font-size: 0.95rem; padding: 12px 10px; border-radius: 10px; }
   .tableau { gap: 6px; }
-  .top-row { gap: 6px; margin-bottom: 12px; }
-  .stock-waste { gap: 8px; margin-right: 12px; }
-  .foundation-group { gap: 8px; }
+  .top-row { gap: 6px; margin-bottom: 12px; flex-wrap: wrap; min-height: auto; }
+  .stock-waste { gap: 5px; margin-right: 8px; }
+  .foundation-group { gap: 5px; }
   .game-area { padding: 0 4px 20px; }
   .tableau-column .card:nth-child(2) { top: 22px; }
   .tableau-column .card:nth-child(3) { top: 44px; }
@@ -1132,13 +1135,13 @@ document.addEventListener('keydown', function(e) {
     hidden = true;
     hint.classList.add('hidden');
   }
-  // Hide after user scrolls or touches the tableau
-  document.addEventListener('scroll', hide, { once: true, passive: true });
-  // Also hide after any game-area click
-  const ga = document.querySelector('.game-area');
-  if (ga) ga.addEventListener('click', hide, { once: true });
-  // Hide after 8 seconds if never triggered
-  setTimeout(hide, 8000);
+  // Hide when user scrolls the tableau
+  const tableau = document.querySelector('.tableau');
+  if (tableau) tableau.addEventListener('scroll', hide, { once: true, passive: true });
+  // Also hide after any click
+  document.addEventListener('click', hide, { once: true });
+  // Hide after 10 seconds if never triggered
+  setTimeout(hide, 10000);
 })();
 
 // ===================== START =====================
