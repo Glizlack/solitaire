@@ -649,7 +649,14 @@ function tryMoveToTableau(toCol) {
   const targetCol = tableau[toCol];
   const targetCard = getBottomCard(targetCol);
 
-  if (!canPlaceOnTableau(movingCard, targetCard)) return false;
+  if (!canPlaceOnTableau(movingCard, targetCard)) {
+    if (!targetCard) {
+      showToast('Only a King can go on an empty column');
+    } else {
+      showToast(`${RANK_NAMES[movingCard.rank]}${SUIT_SYMBOLS[movingCard.suit]} can't go on ${RANK_NAMES[targetCard.rank]}${SUIT_SYMBOLS[targetCard.suit]}`);
+    }
+    return false;
+  }
 
   // Perform the move
   let count, points = 0;
@@ -660,7 +667,10 @@ function tryMoveToTableau(toCol) {
     points = 5;
     pushMove({ type: 'waste_to_tableau', toCol, count, points });
   } else if (selectedCards.source === 'tableau') {
-    if (selectedCards.colIndex === toCol) return false; // Same column
+    if (selectedCards.colIndex === toCol) {
+      showToast('Already in this column');
+      return false;
+    }
     const fromCol = tableau[selectedCards.colIndex];
     count = selectedCards.cards.length;
     const moved = fromCol.splice(selectedCards.cardIndex, count);
@@ -695,7 +705,10 @@ function tryMoveToFoundation() {
   }
 
   const card = selectedCards.cards[0];
-  if (!canPlaceOnFoundation(card)) return false;
+  if (!canPlaceOnFoundation(card)) {
+    showToast(`${RANK_NAMES[card.rank]}${SUIT_SYMBOLS[card.suit]} can't go to foundation yet`);
+    return false;
+  }
 
   const foundIdx = getFoundationIndex(card.suit);
   let points = 0;
@@ -913,12 +926,11 @@ document.querySelector('.game-area').addEventListener('click', function(e) {
     // Already have something selected — try to PLACE
     if (selectedCards) {
       if (source === 'tableau' || source === 'waste') {
-        // Place on tableau column (waste cards go to tableau via the column click path)
         const targetCol = (source === 'tableau') ? col : null;
         if (targetCol !== null) {
           tryMoveToTableau(targetCol);
         } else {
-          selectedCards = null;
+          showToast('Tap a tableau column to place the card');
         }
       } else if (source === 'foundation') {
         tryMoveToFoundation();
