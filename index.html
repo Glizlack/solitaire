@@ -363,39 +363,60 @@ body {
 
 /* === LANDSCAPE MODE (phone tipped sideways) === */
 @media (orientation: landscape) and (max-height: 500px) {
-  .header { padding: 4px 8px; }
-  .header h1 { font-size: 1.1rem; }
-  .score-area { font-size: 0.85rem; padding: 4px 10px; }
-  .btn-row { padding: 0 8px 4px; gap: 5px; }
-  .btn { font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; min-height: 36px; }
-  .top-row { gap: 4px; margin-bottom: 6px; min-height: auto; }
-  .stock-waste { gap: 4px; margin-right: 8px; }
-  .foundation-group { gap: 4px; }
-  .game-area { padding: 0 4px 10px; overflow-y: auto; max-height: calc(100vh - 100px); }
-  .card { width: 58px; height: 82px; }
-  .card-rank { font-size: 0.95rem; top: 2px; left: 4px; }
-  .card-suit-center { font-size: 2rem; }
-  .card-suit-small { font-size: 0.7rem; top: 16px; left: 5px; }
-  .card-corner-bottom { font-size: 0.95rem; bottom: 2px; right: 4px; }
-  .stock-pile, .waste-pile, .tableau-column { width: 58px; height: 82px; }
-  .foundation-pile { width: 64px; height: 88px; }
-  .tableau-column { min-height: 82px; }
-  .tableau-column:empty { min-height: 82px; }
-  .empty-label { font-size: 1.5rem; }
-  .tableau { gap: 4px; }
-  .tableau-column .card:nth-child(2) { top: 17px; }
-  .tableau-column .card:nth-child(3) { top: 34px; }
-  .tableau-column .card:nth-child(4) { top: 51px; }
-  .tableau-column .card:nth-child(5) { top: 68px; }
-  .tableau-column .card:nth-child(6) { top: 85px; }
-  .tableau-column .card:nth-child(7) { top: 102px; }
-  .tableau-column .card:nth-child(8) { top: 119px; }
-  .tableau-column .card:nth-child(9) { top: 136px; }
-  .tableau-column .card:nth-child(10) { top: 153px; }
-  .tableau-column .card:nth-child(11) { top: 170px; }
-  .tableau-column .card:nth-child(12) { top: 187px; }
-  .tableau-column .card:nth-child(13) { top: 204px; }
-  .toast { bottom: 12px; font-size: 0.9rem; padding: 8px 16px; }
+  /* Compact chrome — give max room to game area */
+  .header { padding: 2px 8px; flex-wrap: nowrap; }
+  .header h1 { font-size: 1rem; letter-spacing: 1px; }
+  .score-area { font-size: 0.8rem; padding: 3px 8px; }
+  .btn-row { padding: 2px 8px; gap: 4px; }
+  .btn { font-size: 0.8rem; padding: 6px 10px; border-radius: 6px; min-height: 32px; min-width: 52px; }
+  /* Game area fills remaining vertical space, scrolls deep stacks */
+  .game-area {
+    padding: 0 8px 8px;
+    overflow-y: auto;
+    max-height: calc(100vh - 85px);
+    overflow-x: visible;
+  }
+  /* Top row: stock/waste left, foundations right, full width */
+  .top-row {
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    min-height: auto;
+    flex-wrap: nowrap;
+  }
+  .stock-waste { gap: 6px; margin-right: 0; }
+  .foundation-group { gap: 6px; }
+  /* Cards: bigger to use horizontal space, still compact vertically */
+  .card { width: 68px; height: 96px; border-radius: 8px; }
+  .card-rank { font-size: 1.1rem; top: 3px; left: 5px; }
+  .card-suit-center { font-size: 2.6rem; }
+  .card-suit-small { font-size: 0.8rem; top: 20px; left: 6px; }
+  .card-corner-bottom { font-size: 1.1rem; bottom: 3px; right: 5px; }
+  .stock-pile, .waste-pile, .tableau-column { width: 68px; height: 96px; }
+  .foundation-pile { width: 74px; height: 102px; }
+  .tableau-column { min-height: 96px; }
+  .tableau-column:empty { min-height: 96px; }
+  .tableau-column { border-radius: 8px; border-width: 2px; }
+  .empty-label { font-size: 1.8rem; }
+  /* Tableau: center columns, use full width */
+  .tableau {
+    gap: 6px;
+    justify-content: center;
+    padding-bottom: 2px;
+  }
+  .tableau-column .card:nth-child(2) { top: 20px; }
+  .tableau-column .card:nth-child(3) { top: 40px; }
+  .tableau-column .card:nth-child(4) { top: 60px; }
+  .tableau-column .card:nth-child(5) { top: 80px; }
+  .tableau-column .card:nth-child(6) { top: 100px; }
+  .tableau-column .card:nth-child(7) { top: 120px; }
+  .tableau-column .card:nth-child(8) { top: 140px; }
+  .tableau-column .card:nth-child(9) { top: 160px; }
+  .tableau-column .card:nth-child(10) { top: 180px; }
+  .tableau-column .card:nth-child(11) { top: 200px; }
+  .tableau-column .card:nth-child(12) { top: 220px; }
+  .tableau-column .card:nth-child(13) { top: 240px; }
+  .toast { bottom: 10px; font-size: 0.85rem; padding: 8px 16px; }
 }
 
 /* Toast */
