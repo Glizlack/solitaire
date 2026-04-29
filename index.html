@@ -369,12 +369,18 @@ body {
   .score-area { font-size: 0.8rem; padding: 3px 8px; }
   .btn-row { padding: 2px 8px; gap: 4px; }
   .btn { font-size: 0.8rem; padding: 6px 10px; border-radius: 6px; min-height: 32px; min-width: 52px; }
-  /* Game area fills remaining vertical space, scrolls deep stacks */
+  /* Game area fills remaining vertical space; no horizontal scroll */
   .game-area {
     padding: 0 8px 8px;
     overflow-y: auto;
+    overflow-x: hidden;
     max-height: calc(100vh - 85px);
-    overflow-x: visible;
+  }
+  /* Flex container needs to extend for deep stacked columns
+     (absolutely-positioned cards don't count in layout).
+     12 steps × 20px = 240px below the first card = enough for all 13. */
+  .tableau {
+    padding-bottom: 240px;
   }
   /* Top row: stock/waste left, foundations right, full width */
   .top-row {
@@ -402,7 +408,6 @@ body {
   .tableau {
     gap: 6px;
     justify-content: center;
-    padding-bottom: 2px;
   }
   .tableau-column .card:nth-child(2) { top: 20px; }
   .tableau-column .card:nth-child(3) { top: 40px; }
