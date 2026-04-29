@@ -361,6 +361,43 @@ body {
   .tableau-column .card:nth-child(13) { top: 252px; }
 }
 
+/* === LANDSCAPE MODE (phone tipped sideways) === */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header { padding: 4px 8px; }
+  .header h1 { font-size: 1.1rem; }
+  .score-area { font-size: 0.85rem; padding: 4px 10px; }
+  .btn-row { padding: 0 8px 4px; gap: 5px; }
+  .btn { font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; min-height: 36px; }
+  .top-row { gap: 4px; margin-bottom: 6px; min-height: auto; }
+  .stock-waste { gap: 4px; margin-right: 8px; }
+  .foundation-group { gap: 4px; }
+  .game-area { padding: 0 4px 10px; overflow-y: auto; max-height: calc(100vh - 100px); }
+  .card { width: 58px; height: 82px; }
+  .card-rank { font-size: 0.95rem; top: 2px; left: 4px; }
+  .card-suit-center { font-size: 2rem; }
+  .card-suit-small { font-size: 0.7rem; top: 16px; left: 5px; }
+  .card-corner-bottom { font-size: 0.95rem; bottom: 2px; right: 4px; }
+  .stock-pile, .waste-pile, .tableau-column { width: 58px; height: 82px; }
+  .foundation-pile { width: 64px; height: 88px; }
+  .tableau-column { min-height: 82px; }
+  .tableau-column:empty { min-height: 82px; }
+  .empty-label { font-size: 1.5rem; }
+  .tableau { gap: 4px; }
+  .tableau-column .card:nth-child(2) { top: 17px; }
+  .tableau-column .card:nth-child(3) { top: 34px; }
+  .tableau-column .card:nth-child(4) { top: 51px; }
+  .tableau-column .card:nth-child(5) { top: 68px; }
+  .tableau-column .card:nth-child(6) { top: 85px; }
+  .tableau-column .card:nth-child(7) { top: 102px; }
+  .tableau-column .card:nth-child(8) { top: 119px; }
+  .tableau-column .card:nth-child(9) { top: 136px; }
+  .tableau-column .card:nth-child(10) { top: 153px; }
+  .tableau-column .card:nth-child(11) { top: 170px; }
+  .tableau-column .card:nth-child(12) { top: 187px; }
+  .tableau-column .card:nth-child(13) { top: 204px; }
+  .toast { bottom: 12px; font-size: 0.9rem; padding: 8px 16px; }
+}
+
 /* Toast */
 .toast {
   position: fixed;
@@ -410,6 +447,7 @@ body {
   <button class="btn btn-undo" id="btnUndo" onclick="undo()">↩ Undo</button>
   <button class="btn btn-auto" id="btnAuto" onclick="autoComplete()">✨ Auto</button>
   <button class="btn btn-new" id="btnNew" onclick="newGame()">🔄 New</button>
+  <button class="btn btn-draw" id="btnRotate" onclick="toggleLandscape()" style="background:#8b5cf6;color:#fff;">↻ Rotate</button>
 </div>
 
 <div class="game-area">
@@ -501,6 +539,27 @@ function getBottomCard(column) {
 }
 
 // ===================== INIT GAME =====================
+function toggleLandscape() {
+  if (!screen.orientation || !screen.orientation.lock) {
+    showToast('Rotate your device sideways to play in landscape');
+    return;
+  }
+  try {
+    if (screen.orientation.type.startsWith('landscape')) {
+      screen.orientation.unlock();
+      showToast('Orientation unlocked');
+    } else {
+      screen.orientation.lock('landscape').then(() => {
+        showToast('Landscape locked — rotate back to unlock');
+      }).catch(() => {
+        showToast('Allow orientation lock in settings, or just rotate manually');
+      });
+    }
+  } catch(e) {
+    showToast('Rotate your device sideways to play in landscape');
+  }
+}
+
 function newGame() {
   deck = shuffle(createDeck());
   tableau = [[], [], [], [], [], [], []];
