@@ -98,7 +98,7 @@ body {
   margin-right: 20px;
 }
 
-.stock-pile, .waste-pile, .foundation-pile {
+.stock-pile, .waste-pile {
   width: 100px;
   height: 140px;
   border-radius: 12px;
@@ -108,9 +108,19 @@ body {
   align-items: center;
   justify-content: center;
 }
+.foundation-pile {
+  width: 106px;
+  height: 146px;
+  border-radius: 12px;
+  border: 3px dashed rgba(255,255,255,0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+}
 .stock-pile { background: rgba(0,0,0,0.2); cursor: pointer; }
 .waste-pile { background: rgba(255,255,255,0.05); }
-.foundation-pile { background: rgba(255,255,255,0.08); }
 
 .stock-pile:active, .waste-pile:active { opacity: 0.7; }
 
@@ -303,7 +313,8 @@ body {
   .card-suit-center { font-size: 5rem; }
   .card-suit-small { font-size: 1.4rem; top: 38px; left: 11px; }
   .card-corner-bottom { font-size: 1.6rem; bottom: 7px; right: 9px; }
-  .stock-pile, .waste-pile, .foundation-pile, .tableau-column { width: 110px; height: 155px; }
+  .stock-pile, .waste-pile, .tableau-column { width: 110px; height: 155px; }
+  .foundation-pile { width: 116px; height: 161px; }
   .tableau-column .card:nth-child(2) { top: 33px; }
   .tableau-column .card:nth-child(3) { top: 66px; }
   .tableau-column .card:nth-child(4) { top: 99px; }
@@ -325,8 +336,8 @@ body {
   .card-suit-center { font-size: 3rem; }
   .card-suit-small { font-size: 1rem; top: 26px; left: 7px; }
   .card-corner-bottom { font-size: 1.3rem; bottom: 4px; right: 6px; }
-  .stock-pile, .waste-pile, .foundation-pile, .tableau-column { width: 85px; height: 120px; }
-  .stock-pile, .waste-pile, .foundation-pile { width: 72px; height: 100px; }
+  .stock-pile, .waste-pile, .tableau-column { width: 85px; height: 120px; }
+  .foundation-pile { width: 85px; height: 120px; }
   .empty-label { font-size: 2rem; }
   .btn-row { gap: 6px; padding: 0 4px 8px; }
   .btn { font-size: 0.95rem; padding: 12px 10px; border-radius: 10px; }
